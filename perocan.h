@@ -5,7 +5,8 @@
 #ifndef HAL_PEROCAN_H
 #define HAL_PEROCAN_H
 
-#include <Arduino.h>
+//#include <Arduino.h>
+#include "test.h"
 
 #define HAL_CAN_USES_TEENSY
 //#define HAL_CAN_USES_ROBORIO
@@ -83,7 +84,6 @@ public:
     return id;
   }
 
-  CANStorage_t MyDev;
   uint16_t ApiCount;
   HAL_CAN__Message_t Buffer[8];
   uint16_t BufferedMsgCount;
