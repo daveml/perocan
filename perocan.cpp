@@ -1,3 +1,4 @@
+#if 0
 #include <perocan.h>
 
 namespace perocan 
@@ -8,7 +9,7 @@ using namespace perocan;
 
 
 }
-
+#endif
 #ifdef PEROCAN_USE_ARDUINO_POOP
 
 #include <perocan_arduino.h>
