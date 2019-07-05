@@ -77,4 +77,174 @@ public:
 };
 
 }
-#endif
+
+
+#ifdef PEROCAN_USE_ARDUINO
+
+#include <Arduino.h>
+#include <FlexCAN.h>
+
+namespace perocan
+{
+FlexCAN CAN(1000000);
+//static CAN_message_t msg;
+CAN_filter_t CANfilter,CANFilterMask;
+char sbuf[10];
+	
+class perocan_arduino : public perocan__base
+{
+public:
+  bool init(uint8_t DevType, uint8_t DevMfr, uint8_t DevId){
+	ApiCount=0;
+	BufferedMsgCount=0;
+	//
+	// Setup filtering for just our messages
+	//
+	#define CAN_API_ALL 0x3FF
+	// Use extended CAN
+	CANFilterMask.ext = 1;
+	// Return route disabled
+	CANFilterMask.rtr = 0;
+	// Mask is the inverted match on the CAN ID
+	CANFilterMask.id = ~packCANId(DevType,DevMfr,CAN_API_ALL,DevId);
+
+	CANApiMask = packCANId(DevType,DevMfr,0x000,DevId);
+  
+	CANfilter.rtr = 0;
+	CANfilter.ext = 1;
+	CANfilter.id = 0;  
+	// Ensure all the filters are zero'd
+	for(int i=0; i<8; i++)
+		CAN.setFilter(CANfilter,i);
+    
+	CAN.begin(CANFilterMask);
+
+	delay(500);
+	Serial.println(F("Hello Teensy 3.2 FlexCAN Initialized"));
+	sprintf(sbuf,"FlexCAN listening on CAN ID mask = %08lx\n", ~CANFilterMask.id);
+	Serial.print(sbuf);
+
+	return true;
+  }
+  bool init() {
+	return init(perocan::defaultDevType, perocan::defaultDevMfr, perocan::defaultDevId); }
+  bool send(uint8_t *Data, int Len, int Api){
+	CAN_message_t txmsg;
+	txmsg.id = Id_getFrom_Api(Api);
+	txmsg.ext = 1;
+	txmsg.len = Len;
+	txmsg.timeout = 0;
+	for(int idx=0; idx < Len; idx++)
+		txmsg.buf[idx] = Data[idx];
+	int rval = CAN.write(txmsg);
+	return rval;
+  }
+  bool recv(perocan_message_t *Msg, uint16_t Api)
+  {
+	uint16_t rxapi;
+	CAN_message_t rxmsg;
+  
+	/* Check if there is a new message */
+	if(!CAN.available()) {
+		/* If not, check to see if there is a buffered message pesding */
+		int rval = Api_find_Registered(Api);
+		if(rval >= 0 && Buffer[rval].IsNew) {
+			copy_rxMsg(&Buffer[rval], rxmsg);
+			Buffer[rval].IsNew = false;
+			BufferedMsgCount++;
+			return true;
+		} else {
+			return false;
+		}
+	}
+	if(!CAN.read(rxmsg)) 
+	  return false;
+	
+	/* There is a message to read */
+	rxapi = Api_getFrom_Id(rxmsg.id);
+	/* Does it match what we are looking for? */
+	if( rxapi == Api) {
+		// YES!
+		copy_rxMsg(Msg, rxmsg);
+		return true;
+	}
+	else
+	{
+		int rval = Api_find_Registered(rxapi);
+		if(rval >= 0) {
+		// Yes, so buffer it. We only save the most recent.
+		copy_rxMsg(&Buffer[rval], rxmsg);
+		Buffer[rval].IsNew = true;
+		BufferedMsgCount++;
+		}
+		return false;
+	}
+	return false;
+}
+
+  bool available();
+  
+private:
+  void copy_rxMsg(perocan_message_t *Msg, CAN_message_t RxMsg){
+	Msg->id = RxMsg.id;
+	Msg->ext = RxMsg.ext;
+	Msg->len = RxMsg.len;
+	Msg->timeout = RxMsg.timeout;
+	for(int idx=0; idx < RxMsg.len; idx++)
+		Msg->data[idx] = RxMsg.buf[idx];
+	Msg->api = Api_getFrom_Id(RxMsg.id);  
+  }
+  void copy_txMsg(CAN_message_t *TxMsg, perocan_message_t *Msg)
+  {
+	TxMsg->id = Msg->id;
+	TxMsg->ext = Msg->ext;
+	TxMsg->len = Msg->len;
+	TxMsg->timeout = Msg->timeout;
+	for(int idx=0; idx < Msg->len; idx++)
+		TxMsg->buf[idx] = Msg->data[idx];
+  }
+};
+
+}
+#endif //#ifdef PEROCAN_USE_ARDUINO
+
+
+
+#ifdef PEROCAN_USE_ROBORIO
+
+#include "Robot.h"
+#include <frc/CAN.h>
+
+namespace perocan
+{
+	
+class perocan_roborio : public perocan__base
+{
+public:
+  bool init(uint8_t DevType, uint8_t DevMfr, uint8_t DevId);
+  bool init() {
+	  return init(perocan::defaultDevType, perocan::defaultDevMfr, perocan::defaultDevId); }
+  bool send(uint8_t *Data, int Len, int Api);
+  bool recv(perocan_message_t *Msg, uint16_t Api);
+  
+private:
+  bool checkHandle() {
+    if(CANp == 0) {
+      printf("perocan: Invalid CANp handle\n");
+      return false;
+    }
+    return true;
+  }
+  frc::CAN *CANp=0;
+};
+
+}
+#endif // #ifdef PEROCAN_USE_ROBORIO
+
+#ifdef PEROCAN_USE_GENSPI
+
+#endif // #ifdef PEROCAN_USE_GENSPI
+
+#endif //#ifndef HAL_PEROCAN_H
+
+
