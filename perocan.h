@@ -221,12 +221,51 @@ namespace perocan
 class perocan_roborio : public perocan__base
 {
 public:
+/*
   bool init(uint8_t DevType, uint8_t DevMfr, uint8_t DevId);
+  bool init();
+	bool send(uint8_t *Data, int Len, int Api);
+  bool recv(perocan_message_t *Msg, uint16_t Api);
+*/
+
+  bool init(uint8_t DevType, uint8_t DevMfr, uint8_t DevId){
+		ApiCount=0;
+		BufferedMsgCount=0;
+
+		CANp = new frc::CAN(DevId,DevMfr,DevType);
+
+		if(!checkHandle()) {
+			printf("Hello, perocan_roborio Initialization FAILED\n");
+			return false;
+		}
+
+		printf("Hello, perocan_roborio Initialized DT=%d DM=%d DI=%d\n",DevType,DevMfr,DevId);
+		return true;
+	}
   bool init() {
 	  return init(perocan::defaultDevType, perocan::defaultDevMfr, perocan::defaultDevId); }
-  bool send(uint8_t *Data, int Len, int Api);
-  bool recv(perocan_message_t *Msg, uint16_t Api);
-  
+
+	bool send(uint8_t *Data, int Len, int Api){
+		if(!checkHandle())
+			return false;
+		CANp->WritePacket(Data, Len, Api);
+		return true;
+	}
+
+  bool recv(perocan_message_t *Msg, uint16_t Api){
+		if(!checkHandle())
+			return false;
+
+		frc::CANData RxCANData;
+		if( CANp->ReadPacketNew(Api, &RxCANData) ) {
+			Msg->len = RxCANData.length;
+			std::memcpy(Msg->data, RxCANData.data, RxCANData.length);
+			return true;
+		}
+
+		return false;
+	}
+
 private:
   bool checkHandle() {
     if(CANp == 0) {
@@ -240,6 +279,8 @@ private:
 
 }
 #endif // #ifdef PEROCAN_USE_ROBORIO
+
+
 
 #ifdef PEROCAN_USE_GENSPI
 
