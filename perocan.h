@@ -10,6 +10,22 @@
 namespace perocan
 {
 
+typedef struct {
+  unsigned char manufacturer;
+  unsigned char deviceType;  
+  unsigned char deviceId;
+} CANStorage_t;
+
+typedef struct {
+  uint16_t api;
+  uint8_t ext; // identifier is extended
+  uint8_t len; // length of data
+  uint32_t id; // can identifier
+  uint16_t timeout; // milliseconds, zero will disable waiting
+  uint8_t data[8];
+  bool IsNew;
+} perocan_message_t;
+
 typedef enum {
 	API_REQ = 0,
 	API_RSP = 1,
@@ -67,21 +83,54 @@ const msg_t IndMsgs[1] = {
 		{API_IND, INPUT_IND}
 	};
 
-typedef struct {
-  unsigned char manufacturer;
-  unsigned char deviceType;  
-  unsigned char deviceId;
-} CANStorage_t;
+class msg_base
+{
+public:
+	void init(msg_t Msg){
+		ApiID = Msg.ApiID;
+		Data[0] = Msg.Cmd;
+	}
 
-typedef struct {
-  uint16_t api;
-  uint8_t ext; // identifier is extended
-  uint8_t len; // length of data
-  uint32_t id; // can identifier
-  uint16_t timeout; // milliseconds, zero will disable waiting
-  uint8_t data[8];
-  bool IsNew;
-} perocan_message_t;
+	void init(perocan_message_t *CANData){
+		for(int i=0; i<8; i++)
+			Data[i] = CANData->data[i];
+	}
+
+	void setData_Raw(uint8_t *DataIn) {
+		for(int i=0; i<8; i++)
+			Data[i] = DataIn[i];
+	}
+
+	uint16_t ApiID;
+	uint8_t Data[8];
+};
+
+class H2C_PM_INPUT_IND : public msg_base{
+public:
+	void fill(uint16_t A0, uint16_t A1,uint16_t A2,uint16_t A3, uint8_t D0, uint8_t D1, uint8_t D2, uint8_t D3, uint8_t D4, uint8_t D5) {
+		Data[1] = 0;
+		Data[2] = A3 >> 2;
+		Data[3] = (A3 << 6) | (A2 >> 4);
+		Data[4] = ((A2 & 0x0F) << 4) | (A1 >> 6);
+		Data[5] = ((A1 & 0x3F) << 2) | (A0 >> 8);
+		Data[6] = (A0 & 0xFF);
+		Data[7] = ((D5 & 0x1) << 5) | ((D4 & 0x1) << 4) | ((D3 & 0x1) << 3) | ((D2 & 0x1) << 2) | ((D1 & 0x1) << 1) | (D0 & 0x1);
+	}
+	void parse() {
+		A[0] = ((Data[5] & 0x03) << 8) | (Data[6]);
+		A[1] = ((Data[4] & 0x0F) << 6) | (Data[5] >> 2);
+		A[2] = ((Data[3] & 0x3F) << 4) | (Data[4] >> 4);
+		A[3] = ((Data[2] & 0xFF) << 2) | (Data[3] >> 6);
+		for(int i=0; i<6; i++) {
+			uint8_t tmp = Data[7];
+			D[i] = tmp & 0x01;
+			tmp >>= 1;
+		}
+	}
+
+	uint16_t A[4];
+	bool D[6];
+};
 
 const uint8_t defaultDevType = 0x0F;
 const uint8_t defaultDevMfr  = 0x03;
