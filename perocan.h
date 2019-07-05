@@ -107,7 +107,7 @@ public:
 
 class H2C_PM_INPUT_IND : public msg_base{
 public:
-	void fill(uint16_t A0, uint16_t A1,uint16_t A2,uint16_t A3, uint8_t D0, uint8_t D1, uint8_t D2, uint8_t D3, uint8_t D4, uint8_t D5) {
+	void fill(uint16_t A3, uint16_t A2,uint16_t A1,uint16_t A0, uint8_t D5, uint8_t D4, uint8_t D3, uint8_t D2, uint8_t D1, uint8_t D0) {
 		Data[1] = 0;
 		Data[2] = A3 >> 2;
 		Data[3] = (A3 << 6) | (A2 >> 4);
@@ -121,8 +121,8 @@ public:
 		A[1] = ((Data[4] & 0x0F) << 6) | (Data[5] >> 2);
 		A[2] = ((Data[3] & 0x3F) << 4) | (Data[4] >> 4);
 		A[3] = ((Data[2] & 0xFF) << 2) | (Data[3] >> 6);
+		uint8_t tmp = Data[7];
 		for(int i=0; i<6; i++) {
-			uint8_t tmp = Data[7];
 			D[i] = tmp & 0x01;
 			tmp >>= 1;
 		}
