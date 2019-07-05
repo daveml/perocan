@@ -9,6 +9,64 @@
 
 namespace perocan
 {
+
+typedef enum {
+	API_REQ = 0,
+	API_RSP = 1,
+	API_IND = 2
+} msg_api_e;
+
+typedef enum {
+	STATUS_REQ = 0,
+	STATUS_RSP,
+	CONFIG_REQ,
+	CONFIG_RSP,
+	INPUT_REQ,
+	INPUT_RSP,
+	INPUT_IND,
+	PWMSET_REQ,
+	PWMSET_RSP,
+	DIOSET_REQ,
+	DIOSET_RSP
+} msg_cmd_e;
+
+typedef struct {
+	msg_api_e ApiID;
+	msg_cmd_e Cmd;
+} msg_t;
+
+const msg_t C2H_PM_STATUS_REQ = {API_REQ, STATUS_REQ};
+const msg_t C2H_PM_STATUS_RSP = {API_RSP, STATUS_RSP};
+const msg_t C2H_PM_CONFIG_REQ = {API_REQ, CONFIG_REQ};
+const msg_t C2H_PM_CONFIG_RSP = {API_RSP, CONFIG_RSP};
+const msg_t C2H_PM_INPUT_REQ = {API_REQ, INPUT_REQ};
+const msg_t C2H_PM_INPUT_RSP = {API_RSP, INPUT_RSP};
+const msg_t C2H_PM_INPUT_IND = {API_IND, INPUT_IND};
+const msg_t C2H_PM_PWMSET_REQ = {API_REQ, PWMSET_REQ};
+const msg_t C2H_PM_PWMSET_RSP = {API_RSP, PWMSET_RSP};
+const msg_t C2H_PM_DIOSET_REQ = {API_REQ, DIOSET_REQ};
+const msg_t C2H_PM_DIOSET_RSP = {API_RSP, DIOSET_RSP};
+
+const msg_t ReqMsgs[5] = {
+		{API_REQ, STATUS_REQ},
+    {API_REQ, CONFIG_REQ},
+    {API_REQ, INPUT_REQ},
+    {API_REQ, PWMSET_REQ},
+    {API_REQ, DIOSET_REQ},
+	};
+
+const msg_t RspMsgs[6] = {
+		{API_RSP, STATUS_RSP},
+    {API_RSP, CONFIG_RSP},
+    {API_RSP, INPUT_RSP},
+    {API_RSP, PWMSET_RSP},
+		{API_RSP, DIOSET_RSP}
+	};
+
+const msg_t IndMsgs[1] = {
+		{API_IND, INPUT_IND}
+	};
+
 typedef struct {
   unsigned char manufacturer;
   unsigned char deviceType;  
@@ -28,6 +86,10 @@ typedef struct {
 const uint8_t defaultDevType = 0x0F;
 const uint8_t defaultDevMfr  = 0x03;
 const uint8_t defaultDevId   = 0x01;
+
+static msg_cmd_e Cmd_getFrom_Data(perocan_message_t *Msg) {
+	return (msg_cmd_e)Msg->data[0];
+}
 
 class perocan__base
 {
