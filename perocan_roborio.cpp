@@ -1,3 +1,4 @@
+#ifdef PEROCAN_USE_ROBORIO
 
 #include "Robot.h"
 #include "perocan_roborio.h"
@@ -49,3 +50,5 @@ bool perocan_roborio::recv(perocan_message_t *Msg, uint16_t Api)
 }
 
 } //namespace
+
+#endif

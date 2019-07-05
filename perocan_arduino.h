@@ -5,8 +5,10 @@
 #ifndef PEROCAN_ARDUINO_H
 #define PEROCAN_ARDUINO_H
 
-#include <Arduino.h>
+#ifdef PEROCAN_USE_ARDUINO
+
 #include "perocan.h"
+#include <Arduino.h>
 #include <FlexCAN.h>
 
 namespace perocan
@@ -28,4 +30,5 @@ private:
 };
 
 }
+#endif
 #endif

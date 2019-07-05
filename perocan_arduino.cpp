@@ -1,3 +1,5 @@
+#ifdef PEROCAN_USE_ARDUINO
+
 #include <perocan_arduino.h>
 #include <FlexCAN.h>
 #include "perocan_types.h"
@@ -144,3 +146,5 @@ bool perocan_arduino::available()
 }
 
 } //namespace
+
+#endif

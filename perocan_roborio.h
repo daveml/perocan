@@ -5,9 +5,11 @@
 #ifndef PEROCAN_ROBORIO_H
 #define PEROCAN_ROBORIO_H
 
+#include "perocan.h"
+#ifdef PEROCAN_USE_ROBORIO
+
 #include "Robot.h"
 #include <frc/CAN.h>
-#include "perocan.h"
 
 namespace perocan
 {
@@ -33,4 +35,5 @@ private:
 };
 
 }
+#endif
 #endif
