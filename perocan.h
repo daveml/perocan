@@ -22,10 +22,6 @@ const uint8_t defaultDevType = 0x0F;
 const uint8_t defaultDevMfr  = 0x03;
 const uint8_t defaultDevId   = 0x01;
 
-static msg_cmd_e Cmd_getFrom_Data(perocan_message_t *Msg) {
-	return (msg_cmd_e)Msg->data[0];
-}
-
 class perocan__base
 {
 public:

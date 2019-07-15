@@ -23,7 +23,7 @@ typedef enum {
 } msg_api_e;
 
 typedef enum {
-	STATUS_REQ = 0,
+	STATUS_REQ = 1,
 	STATUS_RSP,
 	CONFIG_REQ,
 	CONFIG_RSP,
@@ -73,22 +73,49 @@ const msg_t IndMsgs[1] = {
 		{API_IND, INPUT_IND}
 	};
 
+static msg_cmd_e Cmd_getFrom_Data(perocan_message_t *Msg) {
+	return (msg_cmd_e)Msg->data[0];
+}
+
 class msg_base
 {
 public:
-	void txInit(msg_t Msg){
+	void txInit(msg_t Msg, bool Rtr=0){
 		ApiID = Msg.ApiID;
-		Data[0] = Msg.Cmd;
+		Data[0] = Msg.Cmd | 0x7F;
+        /* If ReTurn Response requested, set the MSB */
+        /* NOTE this is not CAN RTR */
+        if(Rtr)
+            Data[0] |= 0x80;
 	}
 
 	void rxInit(perocan_message_t *CANData){
         setData_Raw(CANData->data);
 	}
 
+    bool isSet_Rtr()
+    {
+        return (Data[0] & 0x80);
+    }
+
 	void setData_Raw(uint8_t *DataIn) {
 		for(int i=0; i<8; i++)
 			Data[i] = DataIn[i];
 	}
+
+    /*bool SetRespData(perocan_message_t *CANData) {
+        switch(Cmd_getFrom_Data(CANData)) {
+            case STATUS_REQ:
+                //Data[0]
+	        case CONFIG_REQ:
+	        case INPUT_REQ:
+	        case PWMSET_REQ:
+	        case DIOSET_REQ:
+
+
+                
+        }
+    }*/
 
 	msg_api_e ApiID;
 	uint8_t Data[8];
@@ -126,6 +153,14 @@ public:
 };
 
 class C2H_PM_DIOSET_REQ : public msg_base {
+    void txInit() {
+        txInit(false);
+    }
+
+    void txInit(bool Rtr) {
+        msg_base::txInit(C2H_PM_DIOSET_REQ_msg, Rtr);
+    }
+
     /* B1   | B2   | B3   | B4   | B5   | B6   | B7  */
     /* Op   |  Dir | */
     /* Where Op=0 -> no operation, Op=1 -> Set direction */
